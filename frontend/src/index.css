@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #111827;
+  color: #f9fafb;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1f2937; }
+::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+/* Tab styling */
+.tab-btn {
+  @apply px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap;
+}
+.tab-btn.active {
+  @apply border-accent-blue text-accent-blue;
+}
+.tab-btn.inactive {
+  @apply border-transparent text-dark-muted hover:text-dark-text hover:border-dark-border;
+}
+
+/* Input styling */
+.input-field {
+  @apply w-full bg-dark-card border border-dark-border rounded-md px-3 py-1.5 text-sm text-dark-text focus:outline-none focus:ring-1 focus:ring-accent-blue focus:border-accent-blue;
+}
+
+/* Card */
+.card {
+  @apply bg-dark-card border border-dark-border rounded-lg p-4;
+}
+
+/* Metric card */
+.metric-card {
+  @apply bg-dark-card border border-dark-border rounded-lg p-3;
+}
