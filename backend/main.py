@@ -2,8 +2,6 @@
 FIRE Planning Tool — FastAPI backend.
 Wraps the existing Python computation modules.
 """
-import sys
-sys.path.insert(0, "/home/user/fire_app")
 
 import json
 import time
