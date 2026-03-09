@@ -1,17 +1,37 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useMutation } from '@tanstack/react-query';
-import { Search, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ExternalLink, Plus, Trash2, CheckCircle } from 'lucide-react';
 import Plot from 'react-plotly.js';
 import { MetricCard } from '../MetricCard';
 import * as api from '../../api/client';
 import type { ETFRecord, ETFLiveData } from '../../types';
+import { useFireStore } from '../../store/useStore';
 
 const fmt = (n: number | null, decimals = 0) =>
   n === null ? 'N/A' : new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: decimals }).format(n);
 
 const fmtNum = (n: number | null, decimals = 2) =>
   n === null ? 'N/A' : n.toLocaleString('it-IT', { maximumFractionDigits: decimals });
+
+// Default expected gross return by asset class (%)
+const ASSET_CLASS_RETURN: Record<string, number> = {
+  'Equity': 7.0,
+  'Bond': 3.0,
+  'Multi-Asset': 5.0,
+};
+
+interface PortfolioEntry {
+  etf: ETFRecord;
+  allocation: number; // 0-100 %
+}
+
+function redistribute(entries: PortfolioEntry[]): PortfolioEntry[] {
+  if (entries.length === 0) return [];
+  const each = parseFloat((100 / entries.length).toFixed(2));
+  const last = parseFloat((100 - each * (entries.length - 1)).toFixed(2));
+  return entries.map((e, i) => ({ ...e, allocation: i === entries.length - 1 ? last : each }));
+}
 
 export const EtfTab: React.FC = () => {
   const [searchQ, setSearchQ] = useState('');
@@ -20,7 +40,11 @@ export const EtfTab: React.FC = () => {
   const [selectedDomiciles, setSelectedDomiciles] = useState<string[]>([]);
   const [distPolicy, setDistPolicy] = useState<string>('');
   const [selectedEtf, setSelectedEtf] = useState<ETFRecord | null>(null);
-  const [queryEnabled, setQueryEnabled] = useState(true);
+  const [queryEnabled] = useState(true);
+  const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
+  const [applied, setApplied] = useState(false);
+
+  const { setParams } = useFireStore();
 
   // Search query
   const searchQuery = useQuery({
@@ -46,6 +70,42 @@ export const EtfTab: React.FC = () => {
     if (etf.ticker) {
       liveMutation.mutate(etf.ticker);
     }
+  };
+
+  const addToPortfolio = (etf: ETFRecord) => {
+    if (portfolio.find(p => p.etf.isin === etf.isin)) return;
+    setPortfolio(prev => redistribute([...prev, { etf, allocation: 0 }]));
+    setApplied(false);
+  };
+
+  const removeFromPortfolio = (isin: string) => {
+    setPortfolio(prev => redistribute(prev.filter(p => p.etf.isin !== isin)));
+    setApplied(false);
+  };
+
+  const updateAllocation = (isin: string, value: number) => {
+    setPortfolio(prev => prev.map(p => p.etf.isin === isin ? { ...p, allocation: value } : p));
+    setApplied(false);
+  };
+
+  // Clamp all allocations so they sum to 100
+  const totalAlloc = portfolio.reduce((s, p) => s + p.allocation, 0);
+
+  // Weighted TER (catalogue ter is a fraction, e.g. 0.002 = 0.20%)
+  const weightedTer = portfolio.reduce((s, p) => s + p.etf.ter * (p.allocation / 100), 0);
+  // Weighted expected gross return based on asset class defaults
+  const weightedReturn = portfolio.reduce((s, p) => {
+    const base = ASSET_CLASS_RETURN[p.etf.asset_class] ?? 5.0;
+    return s + base * (p.allocation / 100);
+  }, 0);
+
+  const applyToPlanner = () => {
+    if (portfolio.length === 0) return;
+    setParams({
+      ter: parseFloat((weightedTer * 100).toFixed(3)),         // convert fraction → %
+      expected_gross_return: parseFloat(weightedReturn.toFixed(2)),
+    });
+    setApplied(true);
   };
 
   const etfList = searchQuery.data?.etfs || [];
@@ -177,9 +237,10 @@ export const EtfTab: React.FC = () => {
 
         {etfList.length > 0 && (
           <div className="overflow-y-auto max-h-72">
-            <table className="w-full text-xs min-w-[900px]">
+            <table className="w-full text-xs min-w-[960px]">
               <thead className="sticky top-0 bg-dark-card">
                 <tr className="text-dark-muted border-b border-dark-border">
+                  <th className="text-left py-2 pr-2 w-8"></th>
                   <th className="text-left py-2 pr-3">ISIN</th>
                   <th className="text-left py-2 pr-3">Ticker</th>
                   <th className="text-left py-2 pr-3 w-56">Name</th>
@@ -192,30 +253,126 @@ export const EtfTab: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {etfList.map(etf => (
-                  <tr
-                    key={etf.isin}
-                    onClick={() => handleSelectEtf(etf)}
-                    className={`border-b border-dark-border/30 last:border-0 cursor-pointer hover:bg-dark-border/30 transition-colors ${
-                      selectedEtf?.isin === etf.isin ? 'bg-accent-blue/10' : ''
-                    }`}
-                  >
-                    <td className="py-1.5 pr-3 font-mono text-dark-muted">{etf.isin}</td>
-                    <td className="py-1.5 pr-3 font-medium text-accent-blue">{etf.ticker}</td>
-                    <td className="py-1.5 pr-3 text-dark-text max-w-xs truncate" title={etf.name}>{etf.name}</td>
-                    <td className="py-1.5 pr-3 text-right text-accent-orange">{etf.ter.toFixed(2)}%</td>
-                    <td className="py-1.5 pr-3 text-dark-muted">{etf.asset_class}</td>
-                    <td className="py-1.5 pr-3 text-dark-muted max-w-xs truncate" title={etf.sub_category}>{etf.sub_category}</td>
-                    <td className="py-1.5 pr-3 text-dark-muted">{etf.issuer}</td>
-                    <td className="py-1.5 pr-3 text-dark-muted">{etf.domicile}</td>
-                    <td className="py-1.5 text-dark-muted">{etf.dist_policy}</td>
-                  </tr>
-                ))}
+                {etfList.map(etf => {
+                  const inPortfolio = !!portfolio.find(p => p.etf.isin === etf.isin);
+                  return (
+                    <tr
+                      key={etf.isin}
+                      onClick={() => handleSelectEtf(etf)}
+                      className={`border-b border-dark-border/30 last:border-0 cursor-pointer hover:bg-dark-border/30 transition-colors ${
+                        selectedEtf?.isin === etf.isin ? 'bg-accent-blue/10' : ''
+                      }`}
+                    >
+                      <td className="py-1.5 pr-2">
+                        <button
+                          onClick={e => { e.stopPropagation(); inPortfolio ? removeFromPortfolio(etf.isin) : addToPortfolio(etf); }}
+                          title={inPortfolio ? 'Remove from portfolio' : 'Add to portfolio'}
+                          className={`rounded p-0.5 transition-colors ${inPortfolio ? 'text-accent-green hover:text-accent-red' : 'text-dark-muted hover:text-accent-blue'}`}
+                        >
+                          {inPortfolio ? <CheckCircle size={13} /> : <Plus size={13} />}
+                        </button>
+                      </td>
+                      <td className="py-1.5 pr-3 font-mono text-dark-muted">{etf.isin}</td>
+                      <td className="py-1.5 pr-3 font-medium text-accent-blue">{etf.ticker}</td>
+                      <td className="py-1.5 pr-3 text-dark-text max-w-xs truncate" title={etf.name}>{etf.name}</td>
+                      <td className="py-1.5 pr-3 text-right text-accent-orange">{(etf.ter * 100).toFixed(2)}%</td>
+                      <td className="py-1.5 pr-3 text-dark-muted">{etf.asset_class}</td>
+                      <td className="py-1.5 pr-3 text-dark-muted max-w-xs truncate" title={etf.sub_category}>{etf.sub_category}</td>
+                      <td className="py-1.5 pr-3 text-dark-muted">{etf.issuer}</td>
+                      <td className="py-1.5 pr-3 text-dark-muted">{etf.domicile}</td>
+                      <td className="py-1.5 text-dark-muted">{etf.dist_policy}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Portfolio Builder */}
+      {portfolio.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-dark-text">📊 Portfolio Builder</h3>
+            <span className={`text-xs font-medium ${Math.abs(totalAlloc - 100) > 0.1 ? 'text-accent-red' : 'text-accent-green'}`}>
+              Total: {totalAlloc.toFixed(1)}%
+            </span>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            {portfolio.map(entry => (
+              <div key={entry.etf.isin} className="flex items-center gap-3 bg-dark-border/20 rounded-md px-3 py-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-dark-text truncate">{entry.etf.name}</p>
+                  <p className="text-xs text-dark-muted">{entry.etf.ticker} · TER {(entry.etf.ter * 100).toFixed(2)}% · {entry.etf.asset_class}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={entry.allocation}
+                    onChange={e => updateAllocation(entry.etf.isin, parseFloat(e.target.value) || 0)}
+                    className="w-16 text-xs text-center bg-dark-card border border-dark-border rounded px-1 py-0.5 text-dark-text"
+                  />
+                  <span className="text-xs text-dark-muted">%</span>
+                  <button
+                    onClick={() => removeFromPortfolio(entry.etf.isin)}
+                    className="text-dark-muted hover:text-accent-red transition-colors"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Weighted metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+            <MetricCard
+              label="Weighted TER"
+              value={`${(weightedTer * 100).toFixed(3)}%`}
+              color="text-accent-orange"
+            />
+            <MetricCard
+              label="Suggested Gross Return"
+              value={`${weightedReturn.toFixed(2)}%`}
+              color="text-accent-green"
+            />
+            <MetricCard
+              label="ETFs selected"
+              value={`${portfolio.length}`}
+              color="text-accent-blue"
+            />
+          </div>
+
+          <div className="text-xs text-dark-muted mb-3 bg-dark-border/20 rounded px-3 py-2">
+            <span className="text-dark-text font-medium">Note: </span>
+            The suggested return is based on asset-class defaults (Equity 7%, Bond 3%, Multi-Asset 5%) weighted by allocation.
+            You can override it manually in the Salary/ETF parameters after applying.
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={applyToPlanner}
+              disabled={Math.abs(totalAlloc - 100) > 0.5}
+              className="btn-primary text-xs px-4 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Apply to FIRE Planner
+            </button>
+            {Math.abs(totalAlloc - 100) > 0.5 && (
+              <span className="text-xs text-accent-red">Allocations must sum to 100%</span>
+            )}
+            {applied && Math.abs(totalAlloc - 100) <= 0.5 && (
+              <span className="text-xs text-accent-green flex items-center gap-1">
+                <CheckCircle size={12} /> Applied — TER {(weightedTer * 100).toFixed(3)}%, Return {weightedReturn.toFixed(2)}%
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Selected ETF details */}
       {selectedEtf && (
@@ -228,7 +385,7 @@ export const EtfTab: React.FC = () => {
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
               <MetricCard label="Ticker" value={selectedEtf.ticker} color="text-accent-blue" />
-              <MetricCard label="TER" value={`${selectedEtf.ter.toFixed(2)}%`} color="text-accent-orange" />
+              <MetricCard label="TER" value={`${(selectedEtf.ter * 100).toFixed(2)}%`} color="text-accent-orange" />
               <MetricCard label="Issuer" value={selectedEtf.issuer} color="text-dark-text" />
               <MetricCard label="Domicile" value={selectedEtf.domicile} color="text-dark-muted" />
               <MetricCard label="Distribution" value={selectedEtf.dist_policy} color="text-dark-text" />
@@ -241,8 +398,8 @@ export const EtfTab: React.FC = () => {
             {/* TER info */}
             <div className="mt-3 bg-accent-orange/10 border border-accent-orange/20 rounded-md px-3 py-2 text-xs text-dark-muted">
               <span className="text-accent-orange font-medium">TER Info: </span>
-              Total Expense Ratio of {selectedEtf.ter.toFixed(2)}% is charged annually from the fund.
-              Over 30 years, this reduces returns by approximately {(Math.pow(1 - selectedEtf.ter / 100, 30) * 100 - 100).toFixed(1)}% cumulatively.
+              Total Expense Ratio of {(selectedEtf.ter * 100).toFixed(2)}% is charged annually from the fund.
+              Over 30 years, this reduces returns by approximately {(Math.pow(1 - selectedEtf.ter, 30) * 100 - 100).toFixed(1)}% cumulatively.
             </div>
           </div>
 
