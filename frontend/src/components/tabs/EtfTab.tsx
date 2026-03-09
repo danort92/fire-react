@@ -44,7 +44,7 @@ export const EtfTab: React.FC = () => {
   const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
   const [applied, setApplied] = useState(false);
 
-  const { setParams } = useFireStore();
+  const { setParams, params, expenses, setBaseResult } = useFireStore();
 
   // Search query
   const searchQuery = useQuery({
@@ -101,11 +101,14 @@ export const EtfTab: React.FC = () => {
 
   const applyToPlanner = () => {
     if (portfolio.length === 0) return;
-    setParams({
-      ter: parseFloat((weightedTer * 100).toFixed(3)),         // convert fraction → %
-      expected_gross_return: parseFloat(weightedReturn.toFixed(2)),
-    });
+    const newTer = parseFloat((weightedTer * 100).toFixed(3));         // convert fraction → %
+    const newReturn = parseFloat(weightedReturn.toFixed(2));
+    setParams({ ter: newTer, expected_gross_return: newReturn });
     setApplied(true);
+    // Trigger recomputation with updated ETF params
+    api.computeBase({ ...params, ter: newTer, expected_gross_return: newReturn }, expenses)
+      .then(result => setBaseResult(result))
+      .catch(() => { /* silent – user can click Run Computation manually */ });
   };
 
   const etfList = searchQuery.data?.etfs || [];
