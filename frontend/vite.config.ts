@@ -6,6 +6,11 @@ export default defineConfig({
   optimizeDeps: {
     include: ['plotly.js'],
   },
+  resolve: {
+    alias: {
+      'buffer/': 'buffer',
+    },
+  },
   server: {
     port: 5173,
   },
