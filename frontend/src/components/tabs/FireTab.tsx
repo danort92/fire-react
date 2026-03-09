@@ -125,8 +125,17 @@ export const FireTab: React.FC = () => {
           label="Optimal Monthly PAC"
           value={fmt(data.optimal_pac)}
           color="text-accent-purple"
+          help={data.optimal_pac === 0
+            ? 'Your existing assets are already sufficient — no extra monthly investment needed to reach the earliest retirement age'
+            : 'Minimum monthly PAC needed to achieve the earliest possible retirement age'}
         />
       </div>
+
+      {data.optimal_pac === 0 && (
+        <div className="text-xs text-accent-purple bg-accent-purple/10 border border-accent-purple/20 rounded-md px-3 py-2">
+          Optimal PAC = €0 means your current assets are already sufficient to reach the earliest retirement age without additional monthly investment.
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="card">

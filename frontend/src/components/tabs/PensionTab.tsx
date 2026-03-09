@@ -163,6 +163,14 @@ export const PensionTab: React.FC = () => {
           </p>
         )}
 
+        <div className="text-xs text-dark-muted bg-dark-border/20 rounded px-3 py-2 mb-3">
+          <span className="font-medium text-dark-text">About negative NPV values: </span>
+          Both values can be negative — this is expected. The discount rate used equals the ETF net return,
+          so the NPV measures the "excess value" relative to that opportunity cost.
+          A negative NPV simply means that stream of cash flows is worth less than investing the same money at the ETF return indefinitely.
+          What matters is the <span className="font-medium text-dark-text">comparison between the two</span>: whichever NPV is higher (less negative) is the better option.
+        </div>
+
         {npvMutation.data && (
           <>
             {/* Winner banner */}

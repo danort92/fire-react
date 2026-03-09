@@ -20,7 +20,7 @@ AXIS_VARIABLES = {
 
 OUTPUT_METRICS = [
     "Earliest retirement age",
-    "Portfolio (€k) at target age",
+    "Portfolio at target age",
 ]
 
 
@@ -41,7 +41,7 @@ def _compute_cell(params: dict, output_metric: str, stop_working_age: int) -> fl
     if output_metric == "Earliest retirement age":
         return find_earliest_retirement(**params)
 
-    # "Portfolio (€k) at target age" — recompute pension per cell (ral may vary)
+    # "Portfolio at target age" — recompute pension per cell (ral may vary)
     p_info = calculate_state_pension(
         ral=params["ral"],
         ral_growth=params["ral_growth"],
@@ -66,7 +66,7 @@ def _compute_cell(params: dict, output_metric: str, stop_working_age: int) -> fl
         pension_start_age=p_info["pension_age"],
         contribution_years=p_info["contribution_years"],
     )
-    return round(result["assets_at_target_real"] / 1_000)
+    return round(result["assets_at_target_real"])
 
 
 def run_sensitivity(

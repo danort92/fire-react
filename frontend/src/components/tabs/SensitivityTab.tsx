@@ -8,43 +8,29 @@ import * as api from '../../api/client';
 import type { SensitivityResult } from '../../types';
 
 const AXIS_VARIABLES = [
-  'stop_working_age',
-  'monthly_pac',
-  'swr',
-  'expected_gross_return',
-  'inflation',
-  'ral',
-  'monthly_expenses',
-  'etf_value',
-  'fund_return',
-  'annuity_rate',
+  'Monthly expenses',
+  'ETF net return',
+  'Monthly PAC',
+  'Inflation',
+  'RAL (salary)',
 ];
 
 const OUTPUT_METRICS = [
-  'assets_at_target_real',
-  'earliest_retirement_age',
-  'fire_progress',
-  'probability_solvent',
+  'Earliest retirement age',
+  'Portfolio at target age',
 ];
 
 const AXIS_LABELS: Record<string, string> = {
-  stop_working_age: 'Stop Working Age',
-  monthly_pac: 'Monthly PAC (€)',
-  swr: 'SWR (%)',
-  expected_gross_return: 'Gross Return (%)',
-  inflation: 'Inflation (%)',
-  ral: 'RAL (€)',
-  monthly_expenses: 'Monthly Expenses (€)',
-  etf_value: 'ETF Value (€)',
-  fund_return: 'Fund Return (%)',
-  annuity_rate: 'Annuity Rate (%)',
+  'Monthly expenses': 'Monthly Expenses (€)',
+  'ETF net return': 'ETF Net Return',
+  'Monthly PAC': 'Monthly PAC (€)',
+  'Inflation': 'Inflation',
+  'RAL (salary)': 'RAL (€)',
 };
 
 const METRIC_LABELS: Record<string, string> = {
-  assets_at_target_real: 'Wealth at Target Age (Real €)',
-  earliest_retirement_age: 'Earliest Retirement Age',
-  fire_progress: 'FIRE Progress (%)',
-  probability_solvent: 'Solvency Probability (%)',
+  'Earliest retirement age': 'Earliest Retirement Age',
+  'Portfolio at target age': 'Wealth at Target Age (€)',
 };
 
 const fmt = (n: number, decimals = 0) =>
@@ -52,9 +38,9 @@ const fmt = (n: number, decimals = 0) =>
 
 export const SensitivityTab: React.FC = () => {
   const { params, baseResult } = useFireStore();
-  const [xVar, setXVar] = useState('monthly_pac');
-  const [yVar, setYVar] = useState('stop_working_age');
-  const [outputMetric, setOutputMetric] = useState('assets_at_target_real');
+  const [xVar, setXVar] = useState('ETF net return');
+  const [yVar, setYVar] = useState('Monthly expenses');
+  const [outputMetric, setOutputMetric] = useState('Earliest retirement age');
 
   const mutation = useMutation<SensitivityResult, Error>({
     mutationFn: () => {
@@ -83,10 +69,10 @@ export const SensitivityTab: React.FC = () => {
           annotations.push({
             x: xi,
             y: yi,
-            text: outputMetric.includes('age')
+            text: isAgeMetric
               ? String(Math.round(val))
-              : outputMetric === 'probability_solvent' || outputMetric === 'fire_progress'
-              ? `${val.toFixed(0)}%`
+              : val >= 1_000_000
+              ? `${(val / 1_000_000).toFixed(1)}M`
               : val >= 1000
               ? `${(val / 1000).toFixed(0)}k`
               : val.toFixed(0),
@@ -99,7 +85,7 @@ export const SensitivityTab: React.FC = () => {
     return annotations;
   };
 
-  const isAgeMetric = outputMetric === 'earliest_retirement_age';
+  const isAgeMetric = outputMetric === 'Earliest retirement age';
   const colorscale = isAgeMetric ? 'RdYlGn_r' : 'RdYlGn';
 
   // Compute base/best/worst from matrix
@@ -188,30 +174,21 @@ export const SensitivityTab: React.FC = () => {
             <MetricCard
               label="Base Case"
               value={baseVal !== null
-                ? isAgeMetric ? `Age ${Math.round(baseVal)}`
-                : outputMetric === 'probability_solvent' || outputMetric === 'fire_progress'
-                  ? `${baseVal.toFixed(1)}%`
-                  : fmt(baseVal)
+                ? isAgeMetric ? `Age ${Math.round(baseVal)}` : fmt(baseVal)
                 : 'N/A'}
               color="text-dark-text"
             />
             <MetricCard
               label="Best Case"
               value={bestVal !== null
-                ? isAgeMetric ? `Age ${Math.round(bestVal)}`
-                : outputMetric === 'probability_solvent' || outputMetric === 'fire_progress'
-                  ? `${bestVal.toFixed(1)}%`
-                  : fmt(bestVal)
+                ? isAgeMetric ? `Age ${Math.round(bestVal)}` : fmt(bestVal)
                 : 'N/A'}
               color="text-accent-green"
             />
             <MetricCard
               label="Worst Case"
               value={worstVal !== null
-                ? isAgeMetric ? `Age ${Math.round(worstVal)}`
-                : outputMetric === 'probability_solvent' || outputMetric === 'fire_progress'
-                  ? `${worstVal.toFixed(1)}%`
-                  : fmt(worstVal)
+                ? isAgeMetric ? `Age ${Math.round(worstVal)}` : fmt(worstVal)
                 : 'N/A'}
               color="text-accent-red"
             />
