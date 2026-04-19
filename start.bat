@@ -1,32 +1,16 @@
 @echo off
 title FIRE App
 
-:: Install backend dependencies (skips if already installed)
-echo [1/4] Checking backend dependencies...
-cd /d %~dp0backend
+echo Installing backend dependencies...
+cd /d "%~dp0backend"
 pip install -r requirements.txt -q
-if errorlevel 1 (
-    echo ERROR: pip install failed. Make sure Python is installed.
-    pause
-    exit /b 1
-)
 
-:: Start backend
-echo [2/4] Starting backend...
-start "FIRE Backend" cmd /k "cd /d %~dp0backend && python -m uvicorn main:app --reload --port 8000"
+echo Starting backend...
+start "FIRE Backend" cmd /k "cd /d \"%~dp0backend\" && python -m uvicorn main:app --reload --port 8000"
 
-:: Install frontend dependencies if node_modules is missing
-echo [3/4] Checking frontend dependencies...
-if not exist "%~dp0frontend\node_modules" (
-    echo Installing npm packages (first run only)...
-    cd /d %~dp0frontend
-    npm install
-)
+echo Starting frontend...
+start "FIRE Frontend" cmd /k "cd /d \"%~dp0frontend\" && npm run dev"
 
-:: Start frontend
-echo [4/4] Starting frontend...
-start "FIRE Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
-
-:: Wait until frontend responds, then open browser
-echo Waiting for frontend...
-powershell -c "$url='http://localhost:5173'; for($i=0;$i -lt 30;$i++){try{Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 2|Out-Null; Start-Process $url; break}catch{Start-Sleep 2}}"
+echo Opening browser in 20 seconds...
+ping -n 21 127.0.0.1 > nul
+start "" "http://localhost:5173"
