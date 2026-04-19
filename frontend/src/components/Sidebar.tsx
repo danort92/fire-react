@@ -153,7 +153,7 @@ export const Sidebar: React.FC = () => {
             'Italian capital gains tax (imposta sui capital gain) on ETF profits — standard rate is 26%')}
         </Section>
 
-        <Section title="🏦 Bank Account">
+        <Section title="🏦 Bank Account" defaultOpen={false}>
           {num('bank_balance', 'Bank Balance', 0, 500000, 1000, undefined,
             'Current balance in your bank or savings account')}
           {num('bank_interest', 'Bank Interest Rate', 0, 10, 0.01, '%',
@@ -164,7 +164,7 @@ export const Sidebar: React.FC = () => {
             'Annual stamp duty (imposta di bollo) on bank/brokerage accounts — currently €34.20/year for accounts above €5,000')}
         </Section>
 
-        <Section title="🏛️ Pension Fund & TFR">
+        <Section title="🏛️ Pension Fund & TFR" defaultOpen={false}>
           <Field label="TFR Destination" help="Where your TFR (Trattamento di Fine Rapporto — severance pay) is directed. Sending to the pension fund increases contributions and tax savings">
             <select
               className="input-field"
@@ -219,7 +219,7 @@ export const Sidebar: React.FC = () => {
             'Age when you first enrolled in the pension fund — determines the tax rate applied at payout (lower tax with longer membership)')}
         </Section>
 
-        <Section title="🌍 Macro">
+        <Section title="🌍 Macro" defaultOpen={false}>
           {num('inflation', 'Inflation', 0, 10, 0.1, '%',
             'Expected average annual inflation rate — used to compute real (inflation-adjusted) values throughout the projections')}
           {num('ral_growth', 'Annual Salary Growth', 0, 10, 0.1, '%',
@@ -278,7 +278,7 @@ export const Sidebar: React.FC = () => {
             'The percentage of your portfolio you withdraw annually in retirement. The 4% rule is common; 3–3.5% is more conservative for long retirements')}
         </Section>
 
-        <Section title="🏦 Early Pension">
+        <Section title="🏦 Early Pension" defaultOpen={false}>
           <Field label="State Pension" help="Deferring your state pension to age 71 increases the annual amount due to a higher conversion coefficient — useful if you have other income sources early in retirement">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -316,7 +316,7 @@ export const Sidebar: React.FC = () => {
           </Field>
         </Section>
 
-        <Section title="🎲 Monte Carlo">
+        <Section title="🎲 Monte Carlo" defaultOpen={false}>
           {num('n_simulations', 'Number of Simulations', 100, 5000, 100, undefined,
             'Number of random scenarios to simulate. More simulations give more stable probability estimates but take longer to compute')}
           {num('etf_volatility', 'ETF Volatility', 5, 40, 0.5, '%',
