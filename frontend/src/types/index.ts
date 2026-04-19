@@ -26,6 +26,7 @@ export interface ScenarioParams {
   stamp_duty: number;
   tfr_destination: 'fund' | 'company';
   pf_value: number;
+  tfr_pct: number;
   tfr_contribution: number;
   tfr_company_value: number;
   employer_pct: number;
@@ -291,7 +292,7 @@ export const DEFAULT_PARAMS: ScenarioParams = {
   etf_value: 85000, monthly_pac: 1300, ter: 0.3, ivafe: 0.2,
   expected_gross_return: 6.0, capital_gains_tax: 26.0,
   bank_balance: 35000, bank_interest: 1.0, emergency_fund: 20000, stamp_duty: 34.2,
-  tfr_destination: 'fund', pf_value: 22000, tfr_contribution: 1993, tfr_company_value: 0,
+  tfr_destination: 'fund', pf_value: 22000, tfr_pct: 6.91, tfr_contribution: 1993, tfr_company_value: 0,
   employer_pct: 3.0, employer_contribution: 1068, personal_pct: 0.64, personal_contribution: 228,
   voluntary_extra: 3850, max_deductible: 5164.57,
   fund_return: 4.0, annuity_rate: 5.0, age_joined_fund: 30,

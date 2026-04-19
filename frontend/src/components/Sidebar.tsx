@@ -64,11 +64,12 @@ export const Sidebar: React.FC = () => {
   // Sync euro values when percentages or RAL changes
   useEffect(() => {
     setParams({
+      tfr_contribution: Math.round(params.ral * params.tfr_pct / 100),
       employer_contribution: Math.round(params.ral * params.employer_pct / 100),
       personal_contribution: Math.round(params.ral * params.personal_pct / 100),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.ral, params.employer_pct, params.personal_pct]);
+  }, [params.ral, params.tfr_pct, params.employer_pct, params.personal_pct]);
 
   const num = (
     field: keyof typeof params,
@@ -176,8 +177,16 @@ export const Sidebar: React.FC = () => {
           </Field>
           {num('pf_value', 'Pension Fund Current Value', 0, 500000, 1000, undefined,
             'Current accumulated value of your occupational pension fund (fondo pensione complementare)')}
-          {num('tfr_contribution', 'TFR Annual Contribution (€/yr)', 0, 10000, 100, undefined,
-            'Annual TFR amount directed to the pension fund. By law: RAL / 13.5 − €186/year (≈ 6.91% of RAL). Edit if your contract differs.')}
+          <Field label="TFR %" help="TFR contribution as % of RAL. By law: RAL / 13.5 − 0.50% INPS ≈ 6.91%. Edit only if your contract specifies a different base.">
+            <div className="flex gap-1 items-center">
+              <input
+                type="number" className="input-field flex-1"
+                value={params.tfr_pct} min={0} max={15} step={0.01}
+                onChange={e => setParams({ tfr_pct: parseFloat(e.target.value) || 0 })}
+              />
+              <span className="text-xs text-dark-muted whitespace-nowrap">= €{params.tfr_contribution}/yr</span>
+            </div>
+          </Field>
           {params.tfr_destination === 'company' && num('tfr_company_value', 'TFR at Company', 0, 200000, 1000, undefined,
             'TFR balance accumulated at your company (if not directed to the fund)')}
           <Field label="Employer Contribution %" help="Employer's annual contribution to the pension fund as % of RAL — often requires a minimum personal contribution to unlock it">
