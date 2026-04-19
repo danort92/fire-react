@@ -80,6 +80,7 @@ def run_projection(
     tfr_annual_accrual: float = 0.0,         # annual TFR accrual (RAL/13.5) if company
     tfr_company_value: float = 0.0,          # existing TFR in company at current_age
     tfr_revaluation_rate: float = 0.015,     # base TFR revaluation (1.5% + 75%*infl)
+    personal_contribution: float = 0.0,
     etf_returns: Optional[List[float]] = None,
     inflation_factors: Optional[List[float]] = None,
 ) -> List[Dict[str, Any]]:
@@ -182,7 +183,7 @@ def run_projection(
 
         if is_working:
             salary = net_monthly_salary * 12
-            cash_avail = salary - expenses_annual
+            cash_avail = salary - expenses_annual - personal_contribution
 
             bank_before_pac = bank_grow + cash_avail
 

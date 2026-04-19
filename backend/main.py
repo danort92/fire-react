@@ -78,11 +78,15 @@ def _compute_common(params: ScenarioParams, expenses_dict: dict):
     } if hasattr(next(iter(expenses_dict.values()), [None]), 'name') else expenses_dict
     monthly_expenses = compute_total_monthly(expenses_native) if expenses_native else 1297.0
 
-    # Tax
-    # Note: calculate_net_salary signature is (ral, company_benefits, inps_rate, surcharges_rate)
+    # Tax — pension contributions (employer + personal + voluntary) are IRPEF-deductible up to max_deductible
+    actual_pension_deductible = min(
+        p["employer_contribution"] + p["personal_contribution"] + p["voluntary_extra"],
+        p["max_deductible"]
+    )
     tax_result = calculate_net_salary(
         p["ral"], p["company_benefits"],
-        p["inps_employee_rate"], p["surcharges_rate"]
+        p["inps_employee_rate"], p["surcharges_rate"],
+        pension_deductible=actual_pension_deductible,
     )
     net_monthly_salary = float(tax_result["net_monthly_13"])
 
@@ -166,6 +170,7 @@ def _compute_common(params: ScenarioParams, expenses_dict: dict):
         tfr_destination=p["tfr_destination"],
         tfr_annual_accrual=p["tfr_contribution"],
         tfr_company_value=p["tfr_company_value"],
+        personal_contribution=p["personal_contribution"],
     )
 
     return {
@@ -325,6 +330,7 @@ def compute_fire(req: FireRequest):
                 tfr_destination=p["tfr_destination"],
                 tfr_annual_accrual=p["tfr_contribution"],
                 tfr_company_value=p["tfr_company_value"],
+                personal_contribution=p["personal_contribution"],
             )
             target_row = next((r for r in sweep_rows if r["age"] == p["target_age"]), None)
             wealth = float(target_row["total_real"]) if target_row else 0.0
@@ -479,9 +485,14 @@ def compute_npv(req: NpvRequest):
         p = req.params.to_p()
         etf_net_return = p["expected_gross_return"] - p["ter"] - p["ivafe"]
         pension_info = req.pension_info
+        actual_pension_deductible = min(
+            p["employer_contribution"] + p["personal_contribution"] + p["voluntary_extra"],
+            p["max_deductible"]
+        )
         tax_result = calculate_net_salary(
             p["ral"], p["company_benefits"],
-            p["inps_employee_rate"], p["surcharges_rate"]
+            p["inps_employee_rate"], p["surcharges_rate"],
+            pension_deductible=actual_pension_deductible,
         )
         pf_tax_rate = pension_fund_tax_rate(
             age_at_payout=pension_info["pension_age"],
@@ -594,6 +605,7 @@ def compute_scenarios(req: ScenariosCompareRequest):
                 tfr_destination=p_base["tfr_destination"],
                 tfr_annual_accrual=p_base["tfr_contribution"],
                 tfr_company_value=p_base["tfr_company_value"],
+                personal_contribution=p_base["personal_contribution"],
             )
             entry = {"label": sc.label, "rows": rows}
             if req.run_mc:

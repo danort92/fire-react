@@ -19,6 +19,7 @@ def calculate_net_salary(
     company_benefits: float,
     inps_rate: float,
     surcharges_rate: float,
+    pension_deductible: float = 0.0,
 ) -> dict:
     """
     Calculate Italian net salary after IRPEF 2025 taxes.
@@ -29,8 +30,8 @@ def calculate_net_salary(
     # Step 1: INPS contributions (employee share)
     inps = round(ral * inps_rate, 0)
 
-    # Step 2: Taxable income (reddito complessivo for a single-income employee)
-    taxable = ral - inps
+    # Step 2: Taxable income — pension contributions are deductible up to max_deductible
+    taxable = max(0.0, ral - inps - pension_deductible)
 
     # Step 3: IRPEF 2025 brackets: 23% / 35% / 43%
     irpef = round(
