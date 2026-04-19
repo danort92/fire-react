@@ -81,6 +81,8 @@ def run_projection(
     tfr_company_value: float = 0.0,          # existing TFR in company at current_age
     tfr_revaluation_rate: float = 0.015,     # base TFR revaluation (1.5% + 75%*infl)
     personal_contribution: float = 0.0,
+    naspi_monthly_gross: float = 0.0,
+    naspi_months: int = 0,
     etf_returns: Optional[List[float]] = None,
     inflation_factors: Optional[List[float]] = None,
 ) -> List[Dict[str, Any]]:
@@ -196,9 +198,20 @@ def run_projection(
             new_bank = bank_grow + cash_avail - vol_pen - max_pac
 
         else:
-            # Not working: income from part-time + pension
+            # Not working: income from part-time + pension + NASPI
             pt_income = pt_net_annual if is_pt else 0.0
-            ncf = pension_income + pt_income - expenses_annual
+            # NASPI: compute total for this year (months with degression after month 3)
+            naspi_income = 0.0
+            if naspi_monthly_gross > 0 and naspi_months > 0:
+                year_from_stop = age - stop_working_age  # 0-indexed
+                m_start = year_from_stop * 12 + 1
+                m_end = min((year_from_stop + 1) * 12, naspi_months)
+                if m_start <= naspi_months:
+                    naspi_income = sum(
+                        naspi_monthly_gross * (0.97 ** max(0, m - 3))
+                        for m in range(m_start, m_end + 1)
+                    )
+            ncf = pension_income + pt_income + naspi_income - expenses_annual
 
             eff_ef = emergency_fund if (is_working or etf > 1) else 0.0
             bank_deficit = min(0.0, max(-(bank_grow - eff_ef), ncf))

@@ -56,6 +56,8 @@ class ScenarioParams(BaseModel):
     part_time_monthly_gross: float = 0.0
     part_time_until_age: int = 60
     swr: float = 3.5                    # stored as %
+    naspi_enabled: bool = False
+    naspi_months: int = 24
     # Early Pension
     defer_to_71: bool = False
     early_pension_enabled: bool = False

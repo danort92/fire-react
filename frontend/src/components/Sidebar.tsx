@@ -254,6 +254,26 @@ export const Sidebar: React.FC = () => {
                 'Age at which you stop part-time work and fully retire')}
             </>
           )}
+          <Field label="NASPI (Indennità disoccupazione)" help="Simula un periodo di NASPI dopo lo stop lavorativo. Importo: 75% dello stipendio medio mensile, cap €1.550/mese. Degression: −3%/mese dopo il 3° mese.">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={params.naspi_enabled}
+                onChange={e => setParams({ naspi_enabled: e.target.checked })}
+                className="rounded"
+              />
+              <span className="text-sm text-dark-text">Abilita NASPI</span>
+            </label>
+          </Field>
+          {params.naspi_enabled && (
+            <>
+              {num('naspi_months', 'Durata NASPI (mesi)', 1, 24, 1, undefined,
+                'Durata del periodo NASPI. Massimo 24 mesi per chi ha almeno 4 anni di contributi.')}
+              <div className="text-xs text-dark-muted px-1">
+                Importo stimato: €{Math.min(params.ral / 13 * 0.75, 1550).toFixed(0)}/mese (lordo, capped €1.550)
+              </div>
+            </>
+          )}
           {num('swr', 'Safe Withdrawal Rate (SWR)', 1, 10, 0.1, '%',
             'The percentage of your portfolio you withdraw annually in retirement. The 4% rule is common; 3–3.5% is more conservative for long retirements')}
         </Section>

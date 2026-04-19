@@ -47,6 +47,8 @@ export interface ScenarioParams {
   part_time_monthly_gross: number;
   part_time_until_age: number;
   swr: number;
+  naspi_enabled: boolean;
+  naspi_months: number;
   defer_to_71: boolean;
   early_pension_enabled: boolean;
   early_pension_years: number;
@@ -298,7 +300,7 @@ export const DEFAULT_PARAMS: ScenarioParams = {
   fund_return: 4.0, annuity_rate: 5.0, age_joined_fund: 30,
   inflation: 2.0, ral_growth: 0.5, inps_contribution_rate: 33.0, gdp_revaluation_rate: 2.0,
   stop_working_age: 50, part_time: true, part_time_salary: 900, part_time_monthly_gross: 0,
-  part_time_until_age: 60, swr: 3.5,
+  part_time_until_age: 60, swr: 3.5, naspi_enabled: false, naspi_months: 24,
   defer_to_71: false, early_pension_enabled: false, early_pension_years: 41,
   le_adjustment: false, vecchiaia_age: 67,
   n_simulations: 1000, etf_volatility: 16.0, pf_volatility: 5.0, inflation_std: 1.0,
