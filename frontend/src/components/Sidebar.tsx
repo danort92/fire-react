@@ -1,336 +1,311 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ChevronDown, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import {
+  ChevronDown, ChevronRight, Loader2, AlertCircle,
+  LayoutDashboard, Banknote, Receipt, TrendingUp,
+  Flame, Building2, BarChart3, Sliders, PieChart,
+  Settings, Wand2,
+} from 'lucide-react';
 import { useFireStore } from '../store/useStore';
 import * as api from '../api/client';
 
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}
+// ── Nav definition ────────────────────────────────────────────────────────────
 
+const NAV = [
+  {
+    group: 'Overview',
+    items: [
+      { id: 'dashboard',   icon: LayoutDashboard, label: 'Overview' },
+      { id: 'salary',      icon: Banknote,         label: 'My Paycheck' },
+      { id: 'expenses',    icon: Receipt,           label: 'My Expenses' },
+      { id: 'projections', icon: TrendingUp,        label: 'Wealth Projection' },
+    ],
+  },
+  {
+    group: 'Retirement',
+    items: [
+      { id: 'fire',    icon: Flame,     label: 'When Can I Retire?' },
+      { id: 'pension', icon: Building2, label: 'Pension' },
+    ],
+  },
+  {
+    group: 'Analysis',
+    items: [
+      { id: 'scenarios',   icon: BarChart3, label: 'Scenarios & Risk' },
+      { id: 'sensitivity', icon: Sliders,   label: 'What-If Analysis' },
+      { id: 'etf',         icon: PieChart,  label: 'ETF Explorer' },
+    ],
+  },
+];
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+interface SectionProps { title: string; children: React.ReactNode; defaultOpen?: boolean }
 const Section: React.FC<SectionProps> = ({ title, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-dark-border">
+    <div className="border-b border-dark-border/60">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-dark-text hover:bg-dark-border/30 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-dark-muted uppercase tracking-wide hover:text-dark-text transition-colors"
       >
         <span>{title}</span>
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
       </button>
       {open && <div className="px-4 pb-3 space-y-2">{children}</div>}
     </div>
   );
 };
 
-interface FieldProps {
-  label: string;
-  help?: string;
-  children: React.ReactNode;
-}
+interface FieldProps { label: string; help?: string; children: React.ReactNode }
 const Field: React.FC<FieldProps> = ({ label, help, children }) => (
   <div className="flex flex-col gap-0.5">
     <label className="text-xs text-dark-muted cursor-help" title={help}>
-      {label}{help && <span className="ml-1 opacity-50">ⓘ</span>}
+      {label}{help && <span className="ml-1 opacity-40">ⓘ</span>}
     </label>
     {children}
   </div>
 );
 
-export const Sidebar: React.FC = () => {
-  const { params, setParams, expenses, displayReal, toggleDisplayReal, setBaseResult } = useFireStore();
+// ── Main component ────────────────────────────────────────────────────────────
+
+interface SidebarProps { onOpenWizard: () => void }
+
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenWizard }) => {
+  const { params, setParams, expenses, displayReal, toggleDisplayReal, setBaseResult, activeTab, setActiveTab } = useFireStore();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: () => api.computeBase(params, expenses),
-    onSuccess: (data) => {
-      setBaseResult(data);
-      setErrorMsg(null);
-    },
+    onSuccess: (data) => { setBaseResult(data); setErrorMsg(null); },
     onError: (err: any) => {
       setErrorMsg(err?.response?.data?.detail || err?.message || 'Computation failed');
     },
   });
 
-  // Auto-run on mount
-  useEffect(() => {
-    mutation.mutate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { mutation.mutate(); /* eslint-disable-next-line */ }, []);
 
-  // Sync euro values when percentages or RAL changes
   useEffect(() => {
     setParams({
       tfr_contribution: Math.round(params.ral * params.tfr_pct / 100),
       employer_contribution: Math.round(params.ral * params.employer_pct / 100),
       personal_contribution: Math.round(params.ral * params.personal_pct / 100),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }); /* eslint-disable-next-line */
   }, [params.ral, params.tfr_pct, params.employer_pct, params.personal_pct]);
 
-  const num = (
-    field: keyof typeof params,
-    label: string,
-    min?: number,
-    max?: number,
-    step?: string | number,
-    suffix?: string,
-    help?: string,
-  ) => (
-    <Field label={suffix ? `${label} ${suffix}` : label} help={help}>
-      <input
-        type="number"
-        className="input-field"
-        value={params[field] as number}
-        min={min}
-        max={max}
-        step={step ?? 'any'}
-        onChange={e => setParams({ [field]: parseFloat(e.target.value) || 0 } as any)}
-      />
+  const num = (field: keyof typeof params, label: string, min?: number, max?: number, step?: string | number, suffix?: string, help?: string) => (
+    <Field label={suffix ? `${label} (${suffix})` : label} help={help}>
+      <input type="number" className="input-field" value={params[field] as number}
+        min={min} max={max} step={step ?? 'any'}
+        onChange={e => setParams({ [field]: parseFloat(e.target.value) || 0 } as any)} />
     </Field>
   );
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-dark-border">
-        <h2 className="text-sm font-semibold text-dark-text">Parameters</h2>
+
+      {/* App title */}
+      <div className="px-4 py-4 border-b border-dark-border">
+        <div className="flex items-center gap-2">
+          <Flame size={18} className="text-accent-orange" />
+          <span className="text-sm font-bold text-dark-text tracking-tight">FIRE Planner</span>
+          <span className="text-xs text-dark-muted ml-1">IT</span>
+        </div>
       </div>
 
-      {/* Display mode toggle */}
-      <div className="px-4 py-2 border-b border-dark-border flex items-center justify-between">
-        <span className="text-xs text-dark-muted">Display</span>
+      {/* Vertical navigation */}
+      <nav className="px-2 py-3 border-b border-dark-border space-y-4">
+        {NAV.map(group => (
+          <div key={group.group}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-dark-muted/50 px-2 mb-1">{group.group}</p>
+            {group.items.map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
+                  activeTab === id
+                    ? 'bg-accent-blue/15 text-accent-blue font-medium'
+                    : 'text-dark-muted hover:text-dark-text hover:bg-dark-border/40'
+                }`}
+              >
+                <Icon size={15} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      {/* Run + controls */}
+      <div className="px-3 py-3 border-b border-dark-border space-y-2">
+        {errorMsg && (
+          <div className="flex items-start gap-2 bg-accent-red/10 border border-accent-red/30 rounded-md px-3 py-2">
+            <AlertCircle size={13} className="text-accent-red mt-0.5 shrink-0" />
+            <span className="text-xs text-accent-red">{errorMsg}</span>
+          </div>
+        )}
         <button
-          onClick={toggleDisplayReal}
-          className={`text-xs px-2 py-1 rounded transition-colors ${
-            displayReal
-              ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/40'
-              : 'bg-dark-border text-dark-muted border border-dark-border'
-          }`}
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          className="w-full flex items-center justify-center gap-2 bg-accent-blue hover:bg-accent-blue/80 disabled:opacity-60 text-white text-sm font-medium py-2 rounded-md transition-colors"
         >
-          {displayReal ? 'Real (today\'s €)' : 'Nominal'}
+          {mutation.isPending ? <><Loader2 size={13} className="animate-spin" />Computing…</> : '▶  Run Computation'}
         </button>
+        <div className="flex items-center justify-between">
+          <button onClick={toggleDisplayReal}
+            className={`text-xs px-2.5 py-1 rounded transition-colors border ${
+              displayReal ? 'bg-accent-blue/15 text-accent-blue border-accent-blue/30' : 'bg-transparent text-dark-muted border-dark-border'
+            }`}>
+            {displayReal ? 'Real (today\'s €)' : 'Nominal'}
+          </button>
+          <button onClick={onOpenWizard}
+            className="flex items-center gap-1 text-xs text-dark-muted hover:text-dark-text transition-colors">
+            <Wand2 size={12} />Setup
+          </button>
+        </div>
       </div>
 
-      {/* Scrollable sections */}
+      {/* Parameters */}
       <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-2 flex items-center gap-1.5 border-b border-dark-border">
+          <Settings size={12} className="text-dark-muted" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-dark-muted/60">Parameters</span>
+        </div>
 
-        <Section title="👤 Personal">
-          {num('current_age', 'Current Age', 18, 70, 1, undefined,
-            'Your current age')}
-          {num('target_age', 'Target Age', 70, 100, 1, undefined,
-            'The age up to which your finances are projected — use life expectancy or a conservative upper bound')}
-          {num('age_started_working', 'Age Started Working', 16, 50, 1, undefined,
-            'Age of your first job — used to compute INPS contribution years for the state pension')}
+        <Section title="Personal">
+          {num('current_age', 'Current Age', 18, 70, 1, undefined, 'Your current age')}
+          {num('target_age', 'Target Age', 70, 100, 1, undefined, 'Projection end age — use life expectancy or a conservative upper bound')}
+          {num('age_started_working', 'Age Started Working', 16, 50, 1, undefined, 'First job age — used to compute INPS contribution years for the state pension')}
         </Section>
 
-        <Section title="💼 Salary & Tax">
-          {num('ral', 'Gross Annual Salary (RAL)', 10000, 200000, 100, undefined,
-            'Reddito Annuo Lordo — your gross annual salary before any taxes or social contributions')}
-          {num('company_benefits', 'Welfare / Benefits', 0, 20000, 100, undefined,
-            'Company welfare / fringe benefits (e.g. meal vouchers, health plan). Taxed at a flat 5% in Italy')}
-          {num('inps_employee_rate', 'INPS Employee Rate', 0, 20, 0.01, '%',
-            'Employee social security contribution rate. Default 9.19% for most private-sector workers (IVS gestione separata may differ)')}
-          {num('surcharges_rate', 'Regional/Municipal Surcharges', 0, 10, 0.01, '%',
-            'Sum of regional (addizionale regionale) and municipal (addizionale comunale) IRPEF surcharges — varies by location, typically 1–3%')}
+        <Section title="Salary & Tax">
+          {num('ral', 'Gross Annual Salary (RAL)', 10000, 200000, 100, undefined, 'Reddito Annuo Lordo — gross salary before taxes')}
+          {num('company_benefits', 'Welfare / Benefits', 0, 20000, 100, '€', 'Company welfare/fringe benefits. Taxed at flat 5% in Italy')}
+          {num('inps_employee_rate', 'INPS Employee Rate', 0, 20, 0.01, '%', 'Employee INPS contribution rate — 9.19% for most private-sector workers')}
+          {num('surcharges_rate', 'Regional/Municipal Surcharges', 0, 10, 0.01, '%', 'Addizionale regionale + comunale — typically 1–3%')}
         </Section>
 
-        <Section title="📈 ETF / PAC">
-          {num('etf_value', 'Current ETF Value', 0, 2000000, 1000, undefined,
-            'Current market value of your ETF/investment portfolio')}
-          {num('monthly_pac', 'Monthly PAC', 0, 5000, 50, undefined,
-            'Piano Accumulo Capitale — the fixed monthly amount you invest into ETFs')}
-          {num('ter', 'Annual TER', 0, 2, 0.01, '%',
-            'Total Expense Ratio — annual management fee deducted from the fund. Automatically set when you apply an ETF portfolio in the ETF Explorer tab')}
-          {num('ivafe', 'Annual IVAFE', 0, 1, 0.01, '%',
-            'Imposta sul Valore delle Attività Finanziarie Estere — 0.2% annual wealth tax on foreign financial assets (most ETFs domiciled abroad)')}
-          {num('expected_gross_return', 'Expected Gross Return', 1, 20, 0.1, '%',
-            'Expected average annual return before fees and taxes. Net return = Gross Return − TER − IVAFE. Automatically set when you apply an ETF portfolio in the ETF Explorer tab')}
-          {num('capital_gains_tax', 'Capital Gains Tax', 0, 50, 0.5, '%',
-            'Italian capital gains tax (imposta sui capital gain) on ETF profits — standard rate is 26%')}
+        <Section title="ETF / Investments">
+          {num('etf_value', 'Current ETF Value', 0, 2000000, 1000, '€', 'Current market value of your investment portfolio')}
+          {num('monthly_pac', 'Monthly Investment (PAC)', 0, 5000, 50, '€/mo', 'Monthly amount invested into ETFs')}
+          {num('expected_gross_return', 'Expected Gross Return', 1, 20, 0.1, '%', 'Expected annual return before fees. Net = Gross − TER − IVAFE')}
+          {num('ter', 'Fund TER', 0, 2, 0.01, '%', 'Total Expense Ratio — annual fund management fee')}
+          {num('ivafe', 'IVAFE', 0, 1, 0.01, '%', '0.2% annual wealth tax on foreign financial assets')}
+          {num('capital_gains_tax', 'Capital Gains Tax', 0, 50, 0.5, '%', 'Italian CGT on ETF profits — standard 26%')}
         </Section>
 
-        <Section title="🏦 Bank Account" defaultOpen={false}>
-          {num('bank_balance', 'Bank Balance', 0, 500000, 1000, undefined,
-            'Current balance in your bank or savings account')}
-          {num('bank_interest', 'Bank Interest Rate', 0, 10, 0.01, '%',
-            'Annual interest rate on your bank/savings account balance')}
-          {num('emergency_fund', 'Emergency Fund', 0, 100000, 1000, undefined,
-            'Emergency fund amount kept aside and not counted as investable assets — typically 3–6 months of expenses')}
-          {num('stamp_duty', 'Annual Stamp Duty', 0, 100, 0.1, undefined,
-            'Annual stamp duty (imposta di bollo) on bank/brokerage accounts — currently €34.20/year for accounts above €5,000')}
+        <Section title="Bank Account" defaultOpen={false}>
+          {num('bank_balance', 'Bank Balance', 0, 500000, 1000, '€', 'Current bank/savings account balance')}
+          {num('bank_interest', 'Interest Rate', 0, 10, 0.01, '%', 'Annual interest rate on your savings account')}
+          {num('emergency_fund', 'Emergency Fund', 0, 100000, 1000, '€', 'Cash reserve kept aside — not counted as investable assets')}
+          {num('stamp_duty', 'Annual Stamp Duty', 0, 100, 0.1, '€', 'Imposta di bollo — €34.20/year for accounts above €5,000')}
         </Section>
 
-        <Section title="🏛️ Pension Fund & TFR" defaultOpen={false}>
-          <Field label="TFR Destination" help="Where your TFR (Trattamento di Fine Rapporto — severance pay) is directed. Sending to the pension fund increases contributions and tax savings">
-            <select
-              className="input-field"
-              value={params.tfr_destination}
-              onChange={e => setParams({ tfr_destination: e.target.value as 'fund' | 'company' })}
-            >
+        <Section title="Pension Fund & TFR" defaultOpen={false}>
+          <Field label="TFR Destination" help="Where your TFR severance pay is directed">
+            <select className="input-field" value={params.tfr_destination}
+              onChange={e => setParams({ tfr_destination: e.target.value as 'fund' | 'company' })}>
               <option value="fund">Pension Fund</option>
               <option value="company">Company</option>
             </select>
           </Field>
-          {num('pf_value', 'Pension Fund Current Value', 0, 500000, 1000, undefined,
-            'Current accumulated value of your occupational pension fund (fondo pensione complementare)')}
-          <Field label="TFR %" help="TFR contribution as % of RAL. By law: RAL / 13.5 − 0.50% INPS ≈ 6.91%. Edit only if your contract specifies a different base.">
+          {num('pf_value', 'Pension Fund Value', 0, 500000, 1000, '€', 'Current accumulated value of your pension fund')}
+          <Field label="TFR %" help="By law ≈ 6.91% of RAL (RAL / 13.5 − 0.50%)">
             <div className="flex gap-1 items-center">
-              <input
-                type="number" className="input-field flex-1"
-                value={params.tfr_pct} min={0} max={15} step={0.01}
-                onChange={e => setParams({ tfr_pct: parseFloat(e.target.value) || 0 })}
-              />
-              <span className="text-xs text-dark-muted whitespace-nowrap">= €{params.tfr_contribution}/yr</span>
+              <input type="number" className="input-field flex-1" value={params.tfr_pct} min={0} max={15} step={0.01}
+                onChange={e => setParams({ tfr_pct: parseFloat(e.target.value) || 0 })} />
+              <span className="text-xs text-dark-muted whitespace-nowrap">€{params.tfr_contribution}/yr</span>
             </div>
           </Field>
-          {params.tfr_destination === 'company' && num('tfr_company_value', 'TFR at Company', 0, 200000, 1000, undefined,
-            'TFR balance accumulated at your company (if not directed to the fund)')}
-          <Field label="Employer Contribution %" help="Employer's annual contribution to the pension fund as % of RAL — often requires a minimum personal contribution to unlock it">
+          {params.tfr_destination === 'company' && num('tfr_company_value', 'TFR at Company', 0, 200000, 1000, '€', 'TFR balance accumulated at your company')}
+          <Field label="Employer Contribution %" help="Employer's pension fund contribution as % of RAL">
             <div className="flex gap-1 items-center">
-              <input
-                type="number" className="input-field flex-1"
-                value={params.employer_pct} min={0} max={20} step={0.1}
-                onChange={e => setParams({ employer_pct: parseFloat(e.target.value) || 0 })}
-              />
-              <span className="text-xs text-dark-muted whitespace-nowrap">= €{params.employer_contribution}/yr</span>
+              <input type="number" className="input-field flex-1" value={params.employer_pct} min={0} max={20} step={0.1}
+                onChange={e => setParams({ employer_pct: parseFloat(e.target.value) || 0 })} />
+              <span className="text-xs text-dark-muted whitespace-nowrap">€{params.employer_contribution}/yr</span>
             </div>
           </Field>
-          <Field label="Personal Contribution %" help="Your mandatory annual personal contribution to the pension fund as % of RAL (separate from voluntary extras)">
+          <Field label="Personal Contribution %" help="Your mandatory pension contribution as % of RAL">
             <div className="flex gap-1 items-center">
-              <input
-                type="number" className="input-field flex-1"
-                value={params.personal_pct} min={0} max={20} step={0.1}
-                onChange={e => setParams({ personal_pct: parseFloat(e.target.value) || 0 })}
-              />
-              <span className="text-xs text-dark-muted whitespace-nowrap">= €{params.personal_contribution}/yr</span>
+              <input type="number" className="input-field flex-1" value={params.personal_pct} min={0} max={20} step={0.1}
+                onChange={e => setParams({ personal_pct: parseFloat(e.target.value) || 0 })} />
+              <span className="text-xs text-dark-muted whitespace-nowrap">€{params.personal_contribution}/yr</span>
             </div>
           </Field>
-          {num('voluntary_extra', 'Extra Voluntary Contribution', 0, 20000, 100, undefined,
-            'Extra voluntary annual contribution — tax-deductible up to the max deductible limit, making it very tax-efficient')}
-          {num('fund_return', 'Fund Return', 0, 15, 0.1, '%',
-            'Expected average annual return of the pension fund (net of fund management costs)')}
-          {num('annuity_rate', 'Annuity Rate', 0, 10, 0.1, '%',
-            'Conversion rate (coefficiente di conversione) applied to the accumulated capital to calculate your annual pension annuity — typically 4–6%')}
-          {num('age_joined_fund', 'Age Joined Fund', 18, 65, 1, undefined,
-            'Age when you first enrolled in the pension fund — determines the tax rate applied at payout (lower tax with longer membership)')}
+          {num('voluntary_extra', 'Voluntary Extra', 0, 20000, 100, '€/yr', 'Extra voluntary contribution — tax-deductible up to €5,164.57/year')}
+          {num('fund_return', 'Fund Return', 0, 15, 0.1, '%', 'Expected annual return of the pension fund')}
+          {num('annuity_rate', 'Annuity Rate', 0, 10, 0.1, '%', 'Conversion rate for accumulated capital to annual pension (typically 4–6%)')}
+          {num('age_joined_fund', 'Age Joined Fund', 18, 65, 1, undefined, 'Enrollment age — affects payout tax rate (lower with longer membership)')}
         </Section>
 
-        <Section title="🌍 Macro" defaultOpen={false}>
-          {num('inflation', 'Inflation', 0, 10, 0.1, '%',
-            'Expected average annual inflation rate — used to compute real (inflation-adjusted) values throughout the projections')}
-          {num('ral_growth', 'Annual Salary Growth', 0, 10, 0.1, '%',
-            'Expected average annual salary growth rate — affects INPS contributions and pension montante over time')}
-          {num('inps_contribution_rate', 'Total INPS Rate', 10, 40, 0.1, '%',
-            'Total INPS contribution rate (employee + employer combined, ~33% for most workers) — used for the contributory pension calculation')}
-          {num('gdp_revaluation_rate', 'GDP Revaluation Rate', 0, 5, 0.1, '%',
-            'Rate used to revalue INPS contribution montante over time (linked to 5-year average GDP growth) — typically 1–2%')}
+        <Section title="Macro" defaultOpen={false}>
+          {num('inflation', 'Inflation', 0, 10, 0.1, '%', 'Expected average annual inflation rate')}
+          {num('ral_growth', 'Annual Salary Growth', 0, 10, 0.1, '%', 'Expected salary growth rate per year')}
+          {num('inps_contribution_rate', 'Total INPS Rate', 10, 40, 0.1, '%', 'Total INPS rate (employee + employer, ~33%)')}
+          {num('gdp_revaluation_rate', 'GDP Revaluation Rate', 0, 5, 0.1, '%', 'Rate used to revalue INPS montante — linked to 5-year avg GDP growth')}
         </Section>
 
-        <Section title="🔥 FIRE Scenario">
-          {num('stop_working_age', 'Stop Working Age', params.current_age + 1, 70, 1, undefined,
-            'The age at which you plan to stop your main job. The FIRE Analysis tab finds the earliest achievable age given your parameters')}
-          <Field label="Part-time after FIRE" help="Optional part-time or consulting income after stopping full-time work — reduces drawdown on your portfolio during the early retirement years">
+        <Section title="FIRE Scenario">
+          {num('stop_working_age', 'Stop Working Age', params.current_age + 1, 70, 1, undefined, 'Age to stop full-time work')}
+          <Field label="Part-time after FIRE" help="Part-time income after stopping full-time work">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={params.part_time}
-                onChange={e => setParams({ part_time: e.target.checked })}
-                className="rounded"
-              />
+              <input type="checkbox" checked={params.part_time} className="rounded"
+                onChange={e => setParams({ part_time: e.target.checked })} />
               <span className="text-sm text-dark-text">Enable part-time</span>
             </label>
           </Field>
-          {params.part_time && (
-            <>
-              {num('part_time_salary', 'Net Monthly Salary', 0, 5000, 50, undefined,
-                'Net (after-tax) monthly income from part-time work during the early retirement phase')}
-              {num('part_time_monthly_gross', 'Gross Monthly', 0, 10000, 50, undefined,
-                'Gross monthly income from part-time work — used to calculate INPS contributions for the part-time period')}
-              {num('part_time_until_age', 'Part-time Until Age', params.stop_working_age, 80, 1, undefined,
-                'Age at which you stop part-time work and fully retire')}
-            </>
-          )}
-          <Field label="NASPI (Indennità disoccupazione)" help="Simula un periodo di NASPI dopo lo stop lavorativo. Importo: 75% dello stipendio medio mensile, cap €1.550/mese. Degression: −3%/mese dopo il 3° mese.">
+          {params.part_time && (<>
+            {num('part_time_salary', 'Net Monthly', 0, 5000, 50, '€/mo', 'Net monthly part-time income')}
+            {num('part_time_monthly_gross', 'Gross Monthly', 0, 10000, 50, '€/mo', 'Gross monthly (used for INPS contribution calc)')}
+            {num('part_time_until_age', 'Until Age', params.stop_working_age, 80, 1, undefined, 'Age to stop part-time work')}
+          </>)}
+          <Field label="NASPI" help="Unemployment benefit after stopping work — 75% of avg monthly salary, cap €1,550/mo, −3%/mo after month 3">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={params.naspi_enabled}
-                onChange={e => setParams({ naspi_enabled: e.target.checked })}
-                className="rounded"
-              />
-              <span className="text-sm text-dark-text">Abilita NASPI</span>
+              <input type="checkbox" checked={params.naspi_enabled} className="rounded"
+                onChange={e => setParams({ naspi_enabled: e.target.checked })} />
+              <span className="text-sm text-dark-text">Enable NASPI</span>
             </label>
           </Field>
-          {params.naspi_enabled && (
-            <>
-              {num('naspi_months', 'Durata NASPI (mesi)', 1, 24, 1, undefined,
-                'Durata del periodo NASPI. Massimo 24 mesi per chi ha almeno 4 anni di contributi.')}
-              <div className="text-xs text-dark-muted px-1">
-                Importo stimato: €{Math.min(params.ral / 13 * 0.75, 1550).toFixed(0)}/mese (lordo, capped €1.550)
-              </div>
-            </>
-          )}
-          {num('swr', 'Safe Withdrawal Rate (SWR)', 1, 10, 0.1, '%',
-            'The percentage of your portfolio you withdraw annually in retirement. The 4% rule is common; 3–3.5% is more conservative for long retirements')}
+          {params.naspi_enabled && (<>
+            {num('naspi_months', 'Duration (months)', 1, 24, 1, undefined, 'Max 24 months for workers with 4+ years of contributions')}
+            <p className="text-xs text-dark-muted">≈ €{Math.min(params.ral / 13 * 0.75, 1550).toFixed(0)}/mo gross (capped at €1,550)</p>
+          </>)}
+          {num('swr', 'Safe Withdrawal Rate', 1, 10, 0.1, '%', '4% rule is common; 3–3.5% is more conservative for long retirements')}
         </Section>
 
-        <Section title="🏦 Early Pension" defaultOpen={false}>
-          <Field label="State Pension" help="Deferring your state pension to age 71 increases the annual amount due to a higher conversion coefficient — useful if you have other income sources early in retirement">
+        <Section title="State Pension" defaultOpen={false}>
+          <Field label="Defer to age 71" help="Deferring increases the annual pension via higher conversion coefficient">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={params.defer_to_71}
-                onChange={e => setParams({ defer_to_71: e.target.checked })}
-                className="rounded"
-              />
-              <span className="text-sm text-dark-text">Defer to age 71</span>
+              <input type="checkbox" checked={params.defer_to_71} className="rounded"
+                onChange={e => setParams({ defer_to_71: e.target.checked })} />
+              <span className="text-sm text-dark-text">Defer to 71</span>
             </label>
           </Field>
-          <Field label="Early Pension (Anticipata)" help="Pensione anticipata — allows retiring before standard age if you have enough contribution years (typically 41 years 10 months for men / 40 years 10 months for women)">
+          <Field label="Early pension (anticipata)" help="Allows retiring early with enough contribution years (~41y 10m for men)">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={params.early_pension_enabled}
-                onChange={e => setParams({ early_pension_enabled: e.target.checked })}
-                className="rounded"
-              />
+              <input type="checkbox" checked={params.early_pension_enabled} className="rounded"
+                onChange={e => setParams({ early_pension_enabled: e.target.checked })} />
               <span className="text-sm text-dark-text">Enable anticipata</span>
             </label>
           </Field>
-          {params.early_pension_enabled && num('early_pension_years', 'Contribution Years Required', 20, 45, 1, undefined,
-            'Number of INPS contribution years needed to qualify for early pension (pensione anticipata)')}
-          <Field label="Life Expectancy Adjustment" help="Apply the Fornero reform life-expectancy adjustment to shift pension age in line with ISTAT life expectancy data (updated every 2 years)">
+          {params.early_pension_enabled && num('early_pension_years', 'Contribution Years Required', 20, 45, 1)}
+          <Field label="Fornero life expectancy adjustment">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={params.le_adjustment}
-                onChange={e => setParams({ le_adjustment: e.target.checked })}
-                className="rounded"
-              />
-              <span className="text-sm text-dark-text">Apply Fornero adjustment</span>
+              <input type="checkbox" checked={params.le_adjustment} className="rounded"
+                onChange={e => setParams({ le_adjustment: e.target.checked })} />
+              <span className="text-sm text-dark-text">Apply adjustment</span>
             </label>
           </Field>
         </Section>
 
-        <Section title="🎲 Monte Carlo" defaultOpen={false}>
-          {num('n_simulations', 'Number of Simulations', 100, 5000, 100, undefined,
-            'Number of random scenarios to simulate. More simulations give more stable probability estimates but take longer to compute')}
-          {num('etf_volatility', 'ETF Volatility', 5, 40, 0.5, '%',
-            'Annual standard deviation of ETF returns. Historical average for global equity (e.g. MSCI World) is ~15–17%')}
-          {num('pf_volatility', 'PF Volatility', 0, 20, 0.5, '%',
-            'Annual volatility of the pension fund — typically much lower than equities (3–7%) due to bond-heavy allocation')}
-          {num('inflation_std', 'Inflation Std Dev', 0, 5, 0.1, '%',
-            'Standard deviation of annual inflation — adds randomness to real purchasing power in simulations')}
-          <Field label="MC Scenario" help="Market stress scenario applied during Monte Carlo simulations: Normal uses historical distribution; Stress scenarios add negative drift or fat tails; Hybrid combines approaches">
-            <select
-              className="input-field"
-              value={params.mc_scenario}
-              onChange={e => setParams({ mc_scenario: e.target.value })}
-            >
+        <Section title="Monte Carlo" defaultOpen={false}>
+          {num('n_simulations', 'Simulations', 100, 5000, 100, undefined, 'More = more stable results but slower')}
+          {num('etf_volatility', 'ETF Volatility', 5, 40, 0.5, '%', 'Annual std dev of ETF returns — MSCI World ≈ 15–17%')}
+          {num('pf_volatility', 'Pension Fund Volatility', 0, 20, 0.5, '%', 'Typically 3–7% for bond-heavy pension funds')}
+          {num('inflation_std', 'Inflation Std Dev', 0, 5, 0.1, '%', 'Randomness added to annual inflation')}
+          <Field label="MC Scenario">
+            <select className="input-field" value={params.mc_scenario}
+              onChange={e => setParams({ mc_scenario: e.target.value })}>
               {['Normal', 'Moderate Stress', 'Severe Stress', 'Historical Bootstrap', 'Hybrid'].map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
@@ -338,30 +313,6 @@ export const Sidebar: React.FC = () => {
           </Field>
         </Section>
 
-      </div>
-
-      {/* Run button */}
-      <div className="px-4 py-3 border-t border-dark-border space-y-2">
-        {errorMsg && (
-          <div className="flex items-start gap-2 bg-accent-red/10 border border-accent-red/30 rounded-md px-3 py-2">
-            <AlertCircle size={14} className="text-accent-red mt-0.5 shrink-0" />
-            <span className="text-xs text-accent-red">{errorMsg}</span>
-          </div>
-        )}
-        <button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending}
-          className="w-full flex items-center justify-center gap-2 bg-accent-blue hover:bg-accent-blue/80 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium py-2 rounded-md transition-colors"
-        >
-          {mutation.isPending ? (
-            <>
-              <Loader2 size={14} className="animate-spin" />
-              Computing...
-            </>
-          ) : (
-            'Run Computation'
-          )}
-        </button>
       </div>
     </div>
   );

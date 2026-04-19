@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Flame } from 'lucide-react';
 import { useFireStore } from '../store/useStore';
+import { DEFAULT_EXPENSES } from '../types';
 
 interface Props {
   onDone: () => void;
@@ -36,10 +37,18 @@ export const OnboardingWizard: React.FC<Props> = ({ onDone }) => {
   const handleStart = () => {
     const { monthly_expenses, ...paramFields } = form;
     setParams(paramFields);
-    // Replace expenses with a single flat entry matching the entered total
-    setExpenses({
-      'Living': [{ name: 'Monthly expenses', frequency: 'Monthly', amount: monthly_expenses }],
-    });
+    const defaultMonthlyTotal = Object.values(DEFAULT_EXPENSES).flat().reduce((sum, item) => {
+      const mult = item.frequency === 'Monthly' ? 1 : item.frequency === 'Quarterly' ? 1/3 : item.frequency === 'Semi-annual' ? 1/6 : 1/12;
+      return sum + item.amount * mult;
+    }, 0);
+    if (monthly_expenses > 0 && defaultMonthlyTotal > 0) {
+      const ratio = monthly_expenses / defaultMonthlyTotal;
+      setExpenses(Object.fromEntries(
+        Object.entries(DEFAULT_EXPENSES).map(([cat, items]) => [
+          cat, items.map(item => ({ ...item, amount: Math.round(item.amount * ratio) }))
+        ])
+      ));
+    }
     localStorage.setItem('fire_onboarded', '1');
     onDone();
   };

@@ -11,6 +11,8 @@ interface FireStore {
   toggleDisplayReal: () => void;
   baseResult: BaseComputeResult | null;
   setBaseResult: (result: BaseComputeResult) => void;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
 }
 
 export const useFireStore = create<FireStore>((set) => ({
@@ -22,4 +24,6 @@ export const useFireStore = create<FireStore>((set) => ({
   toggleDisplayReal: () => set((s) => ({ displayReal: !s.displayReal })),
   baseResult: null,
   setBaseResult: (result) => set({ baseResult: result }),
+  activeTab: 'dashboard',
+  setActiveTab: (tab) => set({ activeTab: tab }),
 }));
