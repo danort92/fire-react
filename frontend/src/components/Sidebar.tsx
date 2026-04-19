@@ -61,6 +61,15 @@ export const Sidebar: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sync euro values when percentages or RAL changes
+  useEffect(() => {
+    setParams({
+      employer_contribution: Math.round(params.ral * params.employer_pct / 100),
+      personal_contribution: Math.round(params.ral * params.personal_pct / 100),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.ral, params.employer_pct, params.personal_pct]);
+
   const num = (
     field: keyof typeof params,
     label: string,
@@ -167,14 +176,30 @@ export const Sidebar: React.FC = () => {
           </Field>
           {num('pf_value', 'Pension Fund Current Value', 0, 500000, 1000, undefined,
             'Current accumulated value of your occupational pension fund (fondo pensione complementare)')}
-          {num('tfr_contribution', 'TFR Annual Contribution', 0, 10000, 100, undefined,
-            'Annual TFR amount directed to the pension fund — typically ~6.91% of gross salary')}
+          {num('tfr_contribution', 'TFR Annual Contribution (€/yr)', 0, 10000, 100, undefined,
+            'Annual TFR amount directed to the pension fund. By law: RAL / 13.5 − €186/year (≈ 6.91% of RAL). Edit if your contract differs.')}
           {params.tfr_destination === 'company' && num('tfr_company_value', 'TFR at Company', 0, 200000, 1000, undefined,
             'TFR balance accumulated at your company (if not directed to the fund)')}
-          {num('employer_contribution', 'Employer Contribution', 0, 10000, 100, undefined,
-            "Employer's annual contribution to the pension fund — often requires a minimum personal contribution to unlock it")}
-          {num('personal_contribution', 'Personal Contribution', 0, 10000, 100, undefined,
-            'Your mandatory annual personal contribution to the pension fund (separate from voluntary extras)')}
+          <Field label="Employer Contribution %" help="Employer's annual contribution to the pension fund as % of RAL — often requires a minimum personal contribution to unlock it">
+            <div className="flex gap-1 items-center">
+              <input
+                type="number" className="input-field flex-1"
+                value={params.employer_pct} min={0} max={20} step={0.1}
+                onChange={e => setParams({ employer_pct: parseFloat(e.target.value) || 0 })}
+              />
+              <span className="text-xs text-dark-muted whitespace-nowrap">= €{params.employer_contribution}/yr</span>
+            </div>
+          </Field>
+          <Field label="Personal Contribution %" help="Your mandatory annual personal contribution to the pension fund as % of RAL (separate from voluntary extras)">
+            <div className="flex gap-1 items-center">
+              <input
+                type="number" className="input-field flex-1"
+                value={params.personal_pct} min={0} max={20} step={0.1}
+                onChange={e => setParams({ personal_pct: parseFloat(e.target.value) || 0 })}
+              />
+              <span className="text-xs text-dark-muted whitespace-nowrap">= €{params.personal_contribution}/yr</span>
+            </div>
+          </Field>
           {num('voluntary_extra', 'Extra Voluntary Contribution', 0, 20000, 100, undefined,
             'Extra voluntary annual contribution — tax-deductible up to the max deductible limit, making it very tax-efficient')}
           {num('max_deductible', 'Max Deductible', 0, 10000, 1, undefined,
