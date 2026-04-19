@@ -27,6 +27,6 @@ if not exist "%~dp0frontend\node_modules" (
 echo [4/4] Starting frontend...
 start "FIRE Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
-:: Open browser
-timeout /t 6 /nobreak >nul
+:: Open browser after frontend is ready
+timeout /t 15 /nobreak >nul
 start http://localhost:5173
