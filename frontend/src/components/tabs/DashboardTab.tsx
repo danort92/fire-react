@@ -30,8 +30,8 @@ export const DashboardTab: React.FC = () => {
   const fireNumber = (monthly_expenses * 12) / (params.swr / 100);
   const firstRow = rows[0];
   const currentWealth = displayReal
-    ? firstRow.bank_real + firstRow.etf_real + firstRow.pf_real
-    : firstRow.bank + firstRow.etf + firstRow.pf;
+    ? firstRow.bank_real + firstRow.etf_real
+    : firstRow.bank + firstRow.etf;
   const fireProgress = Math.min(100, (currentWealth / fireNumber) * 100);
 
   const totalKey = displayReal ? 'total_real' : 'total_nominal';

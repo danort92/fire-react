@@ -77,6 +77,7 @@ def calculate_net_salary(
 
     return {
         "inps": inps,
+        "pension_deductible": pension_deductible,
         "taxable_income": taxable,
         "irpef": irpef,
         "deductions": deductions,

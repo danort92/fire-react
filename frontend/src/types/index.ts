@@ -34,7 +34,6 @@ export interface ScenarioParams {
   personal_pct: number;
   personal_contribution: number;
   voluntary_extra: number;
-  max_deductible: number;
   fund_return: number;
   annuity_rate: number;
   age_joined_fund: number;
@@ -62,6 +61,7 @@ export interface ScenarioParams {
 
 export interface TaxResult {
   inps: number;
+  pension_deductible: number;
   taxable_income: number;
   irpef: number;
   deductions: number;
@@ -294,7 +294,7 @@ export const DEFAULT_PARAMS: ScenarioParams = {
   bank_balance: 35000, bank_interest: 1.0, emergency_fund: 20000, stamp_duty: 34.2,
   tfr_destination: 'fund', pf_value: 22000, tfr_pct: 6.91, tfr_contribution: 1993, tfr_company_value: 0,
   employer_pct: 3.0, employer_contribution: 1068, personal_pct: 0.64, personal_contribution: 228,
-  voluntary_extra: 3850, max_deductible: 5164.57,
+  voluntary_extra: 3850,
   fund_return: 4.0, annuity_rate: 5.0, age_joined_fund: 30,
   inflation: 2.0, ral_growth: 0.5, inps_contribution_rate: 33.0, gdp_revaluation_rate: 2.0,
   stop_working_age: 50, part_time: true, part_time_salary: 900, part_time_monthly_gross: 0,

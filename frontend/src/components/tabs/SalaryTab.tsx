@@ -24,6 +24,9 @@ export const SalaryTab: React.FC = () => {
   const taxRows = [
     { label: 'Gross RAL', value: fmt(params.ral), className: 'text-dark-text font-medium' },
     { label: 'INPS (Employee)', value: fmt(tax_result.inps), className: 'text-accent-red' },
+    ...(tax_result.pension_deductible > 0
+      ? [{ label: 'Pension Contribution Deduction', value: fmt(tax_result.pension_deductible), className: 'text-accent-green' }]
+      : []),
     { label: 'Taxable Income', value: fmt(tax_result.taxable_income), className: 'text-dark-text' },
     { label: 'Gross IRPEF', value: fmt(tax_result.irpef), className: 'text-accent-red' },
     { label: 'Deductions', value: fmt(tax_result.deductions), className: 'text-accent-green' },

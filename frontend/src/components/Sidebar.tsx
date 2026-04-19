@@ -211,8 +211,6 @@ export const Sidebar: React.FC = () => {
           </Field>
           {num('voluntary_extra', 'Extra Voluntary Contribution', 0, 20000, 100, undefined,
             'Extra voluntary annual contribution — tax-deductible up to the max deductible limit, making it very tax-efficient')}
-          {num('max_deductible', 'Max Deductible', 0, 10000, 1, undefined,
-            'Maximum annual pension contribution deductible from IRPEF income — currently €5,164.57/year')}
           {num('fund_return', 'Fund Return', 0, 15, 0.1, '%',
             'Expected average annual return of the pension fund (net of fund management costs)')}
           {num('annuity_rate', 'Annuity Rate', 0, 10, 0.1, '%',

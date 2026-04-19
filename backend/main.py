@@ -81,7 +81,7 @@ def _compute_common(params: ScenarioParams, expenses_dict: dict):
     # Tax — pension contributions (employer + personal + voluntary) are IRPEF-deductible up to max_deductible
     actual_pension_deductible = min(
         p["employer_contribution"] + p["personal_contribution"] + p["voluntary_extra"],
-        p["max_deductible"]
+        5164.57
     )
     tax_result = calculate_net_salary(
         p["ral"], p["company_benefits"],
@@ -128,7 +128,7 @@ def _compute_common(params: ScenarioParams, expenses_dict: dict):
         employer_contribution=p["employer_contribution"],
         personal_contribution=p["personal_contribution"],
         voluntary_extra=p["voluntary_extra"],
-        max_deductible=p["max_deductible"],
+        max_deductible=5164.57,
         fund_return=p["fund_return"],
         annuity_rate=p["annuity_rate"],
         age_joined=p["age_joined_fund"],
@@ -487,7 +487,7 @@ def compute_npv(req: NpvRequest):
         pension_info = req.pension_info
         actual_pension_deductible = min(
             p["employer_contribution"] + p["personal_contribution"] + p["voluntary_extra"],
-            p["max_deductible"]
+            5164.57
         )
         tax_result = calculate_net_salary(
             p["ral"], p["company_benefits"],
@@ -512,7 +512,7 @@ def compute_npv(req: NpvRequest):
             employer_contribution=p["employer_contribution"],
             personal_contribution=p["personal_contribution"],
             voluntary_extra=p["voluntary_extra"],
-            max_deductible=p["max_deductible"],
+            max_deductible=5164.57,
             fund_return=p["fund_return"],
             annuity_rate=p["annuity_rate"],
             age_joined=p["age_joined_fund"],
