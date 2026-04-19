@@ -136,6 +136,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenWizard }) => {
         ))}
       </nav>
 
+      {/* Setup wizard banner */}
+      <div className="px-3 py-3 border-b border-dark-border">
+        <button
+          onClick={onOpenWizard}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-accent-orange/30 bg-accent-orange/5 hover:bg-accent-orange/10 transition-colors text-left"
+        >
+          <div className="p-1.5 rounded-md bg-accent-orange/20 shrink-0">
+            <Wand2 size={14} className="text-accent-orange" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-dark-text">Profile Setup Wizard</p>
+            <p className="text-[10px] text-dark-muted mt-0.5">Quickly configure your key parameters</p>
+          </div>
+        </button>
+      </div>
+
       {/* Run + controls */}
       <div className="px-3 py-3 border-b border-dark-border space-y-2">
         {errorMsg && (
@@ -151,18 +167,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenWizard }) => {
         >
           {mutation.isPending ? <><Loader2 size={13} className="animate-spin" />Computing…</> : '▶  Run Computation'}
         </button>
-        <div className="flex items-center justify-between">
-          <button onClick={toggleDisplayReal}
-            className={`text-xs px-2.5 py-1 rounded transition-colors border ${
-              displayReal ? 'bg-accent-blue/15 text-accent-blue border-accent-blue/30' : 'bg-transparent text-dark-muted border-dark-border'
-            }`}>
-            {displayReal ? 'Real (today\'s €)' : 'Nominal'}
-          </button>
-          <button onClick={onOpenWizard}
-            className="flex items-center gap-1 text-xs text-dark-muted hover:text-dark-text transition-colors">
-            <Wand2 size={12} />Setup
-          </button>
-        </div>
+        <button onClick={toggleDisplayReal}
+          className={`w-full text-xs px-2.5 py-1 rounded transition-colors border ${
+            displayReal ? 'bg-accent-blue/15 text-accent-blue border-accent-blue/30' : 'bg-transparent text-dark-muted border-dark-border'
+          }`}>
+          {displayReal ? 'Showing: Real (today\'s €)' : 'Showing: Nominal'}
+        </button>
       </div>
 
       {/* Parameters */}
