@@ -127,8 +127,6 @@ def _compute_common(params: ScenarioParams, expenses_dict: dict):
         tfr_contribution=p["tfr_contribution"],
         employer_contribution=p["employer_contribution"],
         personal_contribution=p["personal_contribution"],
-        naspi_monthly_gross=(min(p["ral"] / 13 * 0.75, 1550.0) if p.get("naspi_enabled") else 0.0),
-        naspi_months=(p.get("naspi_months", 0) if p.get("naspi_enabled") else 0),
         voluntary_extra=p["voluntary_extra"],
         max_deductible=5164.57,
         fund_return=p["fund_return"],
