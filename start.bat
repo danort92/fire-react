@@ -13,7 +13,7 @@ if errorlevel 1 (
 
 :: Start backend
 echo [2/4] Starting backend...
-start "FIRE Backend" cmd /k "cd /d %~dp0backend && uvicorn main:app --reload --port 8000"
+start "FIRE Backend" cmd /k "cd /d %~dp0backend && python -m uvicorn main:app --reload --port 8000"
 
 :: Install frontend dependencies if node_modules is missing
 echo [3/4] Checking frontend dependencies...
