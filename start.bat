@@ -27,6 +27,6 @@ if not exist "%~dp0frontend\node_modules" (
 echo [4/4] Starting frontend...
 start "FIRE Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
-:: Open browser after frontend is ready
-timeout /t 15 /nobreak >nul
-powershell -c "Start-Process 'http://localhost:5173'"
+:: Wait until frontend responds, then open browser
+echo Waiting for frontend...
+powershell -c "$url='http://localhost:5173'; for($i=0;$i -lt 30;$i++){try{Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 2|Out-Null; Start-Process $url; break}catch{Start-Sleep 2}}"
