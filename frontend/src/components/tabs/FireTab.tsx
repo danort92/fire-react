@@ -87,9 +87,9 @@ export const FireTab: React.FC = () => {
   const annualExpenses = baseResult.monthly_expenses * 12;
   const fireNumber = (annualExpenses / (params.swr / 100));
 
-  // Current liquid wealth (bank + etf from first row)
+  // Current liquid wealth — bank + ETF only (pension fund is illiquid)
   const firstRow = baseResult.rows[0];
-  const currentWealth = firstRow.bank_real + firstRow.etf_real + firstRow.pf_real;
+  const currentWealth = firstRow.bank_real + firstRow.etf_real;
   const fireProgress = Math.min(100, (currentWealth / fireNumber) * 100);
 
   const netSalary = baseResult.net_monthly_salary;
@@ -109,25 +109,25 @@ export const FireTab: React.FC = () => {
           label="FIRE Number"
           value={fmt(fireNumber)}
           color="text-accent-orange"
-          help={`Annual expenses / SWR (${params.swr}%)`}
+          help={`Target liquid wealth needed to retire: annual expenses ÷ SWR (${params.swr}%). Based on the Safe Withdrawal Rate rule.`}
         />
         <MetricCard
           label="Current Liquid Wealth"
           value={fmt(currentWealth)}
-          color="text-accent-blue"
+          help="Current bank + ETF portfolio (real terms). Excludes pension fund which is illiquid until pension age."
         />
         <MetricCard
           label="Earliest Retirement Age"
           value={data.earliest_retirement > 0 ? `Age ${data.earliest_retirement}` : 'N/A'}
-          color="text-accent-green"
+          color={data.earliest_retirement <= params.stop_working_age ? 'text-accent-green' : 'text-accent-orange'}
+          help="Earliest age at which your liquid wealth (ETF + bank) reaches the FIRE number and the portfolio stays solvent to your target age"
         />
         <MetricCard
           label="Optimal Monthly PAC"
           value={fmt(data.optimal_pac)}
-          color="text-accent-purple"
           help={data.optimal_pac === 0
-            ? 'Your existing assets are already sufficient — no extra monthly investment needed to reach the earliest retirement age'
-            : 'Minimum monthly PAC needed to achieve the earliest possible retirement age'}
+            ? 'No additional monthly investment needed — your current assets are already on track'
+            : 'Minimum monthly investment to achieve the earliest possible retirement age'}
         />
       </div>
 
@@ -163,7 +163,9 @@ export const FireTab: React.FC = () => {
       {/* Status & additional metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="metric-card flex flex-col gap-1">
-          <span className="text-xs text-dark-muted">Solvent to Target Age</span>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-dark-muted">Solvent to Target Age</span>
+          </div>
           <div className="flex items-center gap-1.5">
             {data.scenario_result.solvent_to_target
               ? <CheckCircle size={16} className="text-accent-green" />
@@ -178,16 +180,17 @@ export const FireTab: React.FC = () => {
           label="Wealth at Target Age (Real)"
           value={fmt(data.scenario_result.assets_at_target_real)}
           color={data.scenario_result.assets_at_target_real > 0 ? 'text-accent-green' : 'text-accent-red'}
+          help="Total real wealth (inflation-adjusted) at your target age under the chosen scenario"
         />
         <MetricCard
-          label="Effective Avg Monthly PAC"
+          label="Avg Monthly Investment"
           value={fmt(data.scenario_result.effective_avg_monthly_pac)}
-          color="text-accent-blue"
+          help="Average monthly amount invested into ETFs during the working years"
         />
         <MetricCard
           label="Savings Rate"
           value={fmtPct(savingsRate)}
-          color="text-accent-orange"
+          help="Net monthly savings as a percentage of net salary"
         />
       </div>
 

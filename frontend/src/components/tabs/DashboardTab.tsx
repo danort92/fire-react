@@ -54,27 +54,28 @@ export const DashboardTab: React.FC = () => {
         <MetricCard
           label="Net Monthly Salary"
           value={fmt(net_monthly_salary)}
-          color="text-accent-green"
+          help="Net salary after INPS, IRPEF, surcharges and pension contribution deductions"
         />
         <MetricCard
           label="Monthly Expenses"
           value={fmt(monthly_expenses)}
-          color="text-accent-orange"
+          help="Total monthly expenses from all categories"
         />
         <MetricCard
           label="Monthly Savings"
           value={fmt(monthlySavings)}
-          color={monthlySavings >= 0 ? 'text-accent-blue' : 'text-accent-red'}
+          color={monthlySavings >= 0 ? 'text-accent-green' : 'text-accent-red'}
+          help="Net salary minus total expenses — amount available for investment each month"
         />
         <MetricCard
           label="Savings Rate"
           value={fmtPct(Math.max(0, savingsRate))}
-          color="text-accent-purple"
+          help="Percentage of net salary saved each month"
         />
         <MetricCard
           label="Annual Pension (Net)"
           value={fmt(pension_info.net_annual_nominal)}
-          color="text-dark-text"
+          help="Estimated net annual state pension (INPS) at retirement age"
         />
       </div>
 

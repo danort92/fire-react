@@ -228,6 +228,7 @@ def _fire_kwargs(p: dict, net_monthly_salary: float, monthly_expenses: float,
         tfr_company_value=p["tfr_company_value"],
         early_pension_years=p["early_pension_years"] if p["early_pension_enabled"] else 0,
         defer_to_71=p["defer_to_71"],
+        swr=p["swr"],
     )
 
 

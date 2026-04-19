@@ -206,6 +206,7 @@ def find_earliest_retirement(
     ral_growth: float,
     inps_contribution_rate: float,
     gdp_revaluation_rate: float,
+    swr: float = 4.0,
     part_time_salary_gross: float = 0.0,
     part_time_monthly_gross: float = 0.0,
     inps_employee_rate: float = 0.0919,
@@ -218,9 +219,13 @@ def find_earliest_retirement(
     defer_to_71: bool = False,
 ) -> int:
     """
-    Find earliest stop_working_age where portfolio stays solvent to target_age.
+    Find earliest stop_working_age where:
+    1. Liquid wealth (ETF + bank) at that age >= FIRE number (annual_expenses / SWR)
+    2. Portfolio stays solvent to target_age
     Tests ages from current_age+1 to 65.
     """
+    fire_number = monthly_expenses * 12 / (swr / 100)
+
     for test_stop_age in range(current_age + 1, 66):
         contrib_years, state_pension_net, p_start_age = _pension_for_stop_age(
             test_stop_age=test_stop_age,
@@ -258,6 +263,14 @@ def find_earliest_retirement(
             tfr_company_value=tfr_company_value, tfr_revaluation_rate=tfr_revaluation_rate,
         )
         rows = run_projection(**kwargs)
+
+        # Require liquid wealth >= FIRE number at the retirement age
+        stop_row = next((r for r in rows if r["age"] == test_stop_age), None)
+        if stop_row is None:
+            continue
+        liquid_at_stop = stop_row["etf"] + stop_row["bank"]
+        if liquid_at_stop < fire_number:
+            continue
 
         target_row = next((r for r in rows if r["age"] == target_age), None)
         if target_row and target_row["total_real"] > 0 and _is_solvent_to_target(rows, target_age):
@@ -304,6 +317,7 @@ def find_optimal_pac(
     tfr_revaluation_rate: float = 0.015,
     early_pension_years: int = 0,
     defer_to_71: bool = False,
+    swr: float = 4.0,
     **_,
 ) -> int:
     """Find minimum monthly PAC (step 50) that achieves the global earliest retirement age."""
@@ -324,6 +338,7 @@ def find_optimal_pac(
             pension_start_age=pension_start_age, ral=ral, ral_growth=ral_growth,
             inps_contribution_rate=inps_contribution_rate,
             gdp_revaluation_rate=gdp_revaluation_rate,
+            swr=swr,
             part_time_salary_gross=part_time_salary,
             part_time_monthly_gross=part_time_monthly_gross,
             inps_employee_rate=inps_employee_rate, surcharges_rate=surcharges_rate,
