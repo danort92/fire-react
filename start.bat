@@ -29,4 +29,4 @@ start "FIRE Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
 :: Open browser after frontend is ready
 timeout /t 15 /nobreak >nul
-start http://localhost:5173
+powershell -c "Start-Process 'http://localhost:5173'"
